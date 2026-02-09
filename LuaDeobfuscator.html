@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lua Deobfuscation Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(30, 30, 46, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            border: 1px solid #2d2d44;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
+            color: #e2e8f0;
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid #2d2d44;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+            font-weight: 700;
+            color: #60a5fa;
+        }
+        
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.4;
+            color: #94a3b8;
+        }
+        
+        .content {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+        
+        .input-section, .output-section {
+            display: flex;
+            flex-direction: column;
+            min-height: 300px;
+        }
+        
+        .section-title {
+            font-size: 1.1rem;
+            color: #e2e8f0;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #374151;
+            font-weight: 600;
+        }
+        
+        .code-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+        }
+        
+        .code-header {
+            background: #1f2937;
+            padding: 10px 15px;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            border: 1px solid #374151;
+            border-bottom: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .code-label {
+            font-weight: 600;
+            color: #d1d5db;
+            font-size: 0.9rem;
+        }
+        
+        .code-body {
+            flex: 1;
+            position: relative;
+            min-height: 150px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 100%;
+            min-height: 150px;
+            max-height: 200px;
+            padding: 15px;
+            border: 1px solid #374151;
+            border-radius: 0 0 8px 8px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.3;
+            resize: vertical;
+            background: #111827;
+            color: #d1d5db;
+            transition: all 0.3s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+        
+        .output-container {
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+            flex: 1;
+            min-height: 150px;
+            max-height: 200px;
+        }
+        
+        .output-text {
+            width: 100%;
+            height: 100%;
+            min-height: 150px;
+            max-height: 200px;
+            padding: 15px;
+            background: #0d1117;
+            color: #c9d1d9;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.3;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: none;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .truncated {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 6;
+            -webkit-box-orient: vertical;
+            max-height: 120px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #374151;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex: 1;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #374151;
+            color: #e5e7eb;
+            border: 1px solid #4b5563;
+        }
+        
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .stats {
+            margin-top: 10px;
+            display: flex;
+            gap: 15px;
+            color: #9ca3af;
+            font-size: 0.8rem;
+        }
+        
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .stat-icon {
+            font-size: 0.9rem;
+        }
+        
+        .copy-btn {
+            background: #059669;
+            color: white;
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .copy-btn:hover {
+            background: #047857;
+        }
+        
+        .copy-success {
+            background: #059669;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            animation: fadeOut 2s forwards;
+            opacity: 0;
+        }
+        
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: #6b7280;
+            font-size: 0.8rem;
+            border-top: 1px solid #374151;
+            background: #111827;
+        }
+        
+        .example-btn {
+            background: transparent;
+            border: 1px dashed #6b7280;
+            color: #9ca3af;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        
+        .example-btn:hover {
+            background: #374151;
+            border-color: #9ca3af;
+        }
+        
+        .toggle-truncate {
+            background: transparent;
+            border: none;
+            color: #60a5fa;
+            cursor: pointer;
+            font-size: 0.8rem;
+            padding: 2px 5px;
+            margin-left: 5px;
+        }
+        
+        .toggle-truncate:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Lua Deobfuscation Tool</h1>
+            <p>made by cheeseitareyum</p>
+        </div>
+        
+        <div class="content">
+            <div class="input-section">
+                <h2 class="section-title">Obfuscated Input</h2>
+                <div class="code-container">
+                    <div class="code-header">
+                        <span class="code-label">Paste obfuscated code</span>
+                        <button class="example-btn" id="load-example">
+                            <i class="fas fa-code"></i> Load Example
+                        </button>
+                    </div>
+                    <div class="code-body">
+                        <textarea id="input-code" placeholder="Paste obfuscated Lua/Roblox code here..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-item">
+                        <i class="fas fa-font stat-icon"></i>
+                        <span id="char-count">0 chars</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-grip-lines stat-icon"></i>
+                        <span id="line-count">0 lines</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="output-section">
+                <h2 class="section-title">Deobfuscated Output</h2>
+                <div class="code-container">
+                    <div class="code-header">
+                        <span class="code-label">Clean code</span>
+                        <div id="copy-status"></div>
+                    </div>
+                    <div class="output-container">
+                        <pre class="output-text" id="output-code"></pre>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" id="format-btn">
+                        <i class="fas fa-hammer"></i> Deobfuscate
+                    </button>
+                    <button class="btn btn-secondary" id="clear-btn">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                    <button class="btn btn-secondary" id="copy-btn">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>made by cheeseitareyum</p>
+        </div>
+    </div>
+
+    <script>
+        const inputCode = document.getElementById('input-code');
+        const outputCode = document.getElementById('output-code');
+        const formatBtn = document.getElementById('format-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const loadExampleBtn = document.getElementById('load-example');
+        const charCount = document.getElementById('char-count');
+        const lineCount = document.getElementById('line-count');
+        const copyStatus = document.getElementById('copy-status');
+        
+        const exampleCode = `if getgenv().Supassra_sp then return;end getgenv().Supassra_sp=true;local v1=game:GetService("Players");local v2=game:GetService("UserInputService");local v3=game:GetService("RunService");local v4=game:GetService("TweenService");local v5=game:GetService("HttpService");local v6=game:GetService("MarketplaceService");local v7=game:GetService("TeleportService");local v8=game:GetService("Workspace");local v9=v1.LocalPlayer;local v10=Instance.new("ScreenGui");v10.Name="SUPASSRA_SP_GUI";v10.Parent=v9:WaitForChild("PlayerGui");v10.ResetOnSpawn=false;local function v14(v233,v234) local v235=0;local v236;while true do if (v235==1) then v236.AnchorPoint=Vector2.new(0.5,0);v236.BackgroundColor3=v234;v236.BackgroundTransparency=0.4;v236.TextColor3=Color3.new(1,1,1);v235=2;end if (v235==3) then v236.Parent=v10;Instance.new("UICorner",v236).CornerRadius=UDim.new(0,12);task.spawn(function() local v456=0;while true do if (v456==0) then task.wait(3);v236:Destroy();break;end end end);break;end if (v235==0) then v234=v234 or Color3.fromRGB(100,200,255);v236=Instance.new("TextLabel");v236.Size=UDim2.fromOffset(240,48);v236.Position=UDim2.new(0.5,0,0,60);v235=1;end if (v235==2) then v236.Font=Enum.Font.GothamBold;v236.TextSize=15;v236.Text=v233;v236.ZIndex=10000;v235=3;end end end v14("SUPASSRA_SP PREMIUM LOADED!",Color3.fromRGB(140,100,255));`;
+        
+        let isTruncated = true;
+        
+        window.addEventListener('DOMContentLoaded', () => {
+            inputCode.value = exampleCode;
+            updateStats();
+            applyTruncation();
+        });
+        
+        function updateStats() {
+            const text = inputCode.value;
+            const chars = text.length;
+            const lines = text.split('\n').length;
+            
+            charCount.textContent = `${chars.toLocaleString()} chars`;
+            lineCount.textContent = `${lines.toLocaleString()} lines`;
+        }
+        
+        function applyTruncation() {
+            if (isTruncated && outputCode.textContent) {
+                const text = outputCode.textContent;
+                const lines = text.split('\n');
+                if (lines.length > 6) {
+                    const truncated = lines.slice(0, 6).join('\n') + '\n...';
+                    outputCode.textContent = truncated;
+                }
+            }
+        }
+        
+        function formatLuaCode(code) {
+            if (!code.trim()) return "";
+            
+            let formatted = code.replace(/--\[\[[\s\S]*?\]\]/g, '');
+            formatted = formatted.replace(/--[^\n]*/g, '');
+            
+            formatted = formatted.replace(/;(?=(?:(?:[^"]*"){2})*[^"]*$)/g, ';\n');
+            
+            const keywords = ['then', 'do', 'end', 'else', 'elseif', 'function'];
+            keywords.forEach(keyword => {
+                const regex = new RegExp(`\\b${keyword}\\b(?![\\s\\w]*["'])`, 'gi');
+                formatted = formatted.replace(regex, match => match + '\n');
+            });
+            
+            formatted = formatted.replace(/\)(?![)\s,;])/g, ')\n');
+            formatted = formatted.replace(/}(?![}\s,;])/g, '}\n');
+            
+            const operators = ['=', '==', '~=', '<=', '>=', '<', '>', '%', '+', '-', '*', '/', '..'];
+            operators.forEach(op => {
+                const escapedOp = op.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(?<!["'])\\s*${escapedOp}\\s*(?!["'])`, 'g');
+                formatted = formatted.replace(regex, ` ${op} `);
+            });
+            
+            formatted = formatted.replace(/,(?!\s)/g, ', ');
+            
+            formatted = formatted.replace(/\n\s*\n\s*\n/g, '\n\n');
+            
+            let lines = formatted.split('\n');
+            let indentLevel = 0;
+            const indentSize = 4;
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                
+                if (line.match(/^\s*(end|else|elseif|until|})\s*(?:--.*)?$/)) {
+                    indentLevel = Math.max(0, indentLevel - 1);
+                }
+                
+                lines[i] = ' '.repeat(indentLevel * indentSize) + line;
+                
+                if (line.match(/\b(do|then|function)\s*$(?!\S)/) || 
+                    line.match(/^\s*(if|for|while|function)\b/) ||
+                    line.includes('{') && !line.includes('}')) {
+                    indentLevel++;
+                }
+            }
+            
+            formatted = lines.join('\n');
+            
+            formatted = formatted.replace(/\n\s*\n\s*\n/g, '\n\n');
+            formatted = formatted.replace(/^\s*\n/, '');
+            
+            return formatted;
+        }
+        
+        formatBtn.addEventListener('click', () => {
+            const input = inputCode.value;
+            if (!input.trim()) {
+                outputCode.textContent = "Enter code to deobfuscate.";
+                return;
+            }
+            
+            const formatted = formatLuaCode(input);
+            outputCode.textContent = formatted;
+            
+            applyTruncation();
+            
+            const originalText = formatBtn.innerHTML;
+            formatBtn.innerHTML = '<i class="fas fa-check"></i> Done!';
+            formatBtn.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+            
+            setTimeout(() => {
+                formatBtn.innerHTML = originalText;
+                formatBtn.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+            }, 1500);
+        });
+        
+        clearBtn.addEventListener('click', () => {
+            inputCode.value = '';
+            outputCode.textContent = '';
+            updateStats();
+            
+            const originalText = clearBtn.innerHTML;
+            clearBtn.innerHTML = '<i class="fas fa-check"></i> Cleared!';
+            
+            setTimeout(() => {
+                clearBtn.innerHTML = originalText;
+            }, 1200);
+        });
+        
+        copyBtn.addEventListener('click', () => {
+            const fullText = outputCode.getAttribute('data-full') || outputCode.textContent;
+            if (!fullText.trim()) {
+                showCopyStatus('No code!', false);
+                return;
+            }
+            
+            navigator.clipboard.writeText(fullText).then(() => {
+                showCopyStatus('Copied!', true);
+            }).catch(err => {
+                showCopyStatus('Failed!', false);
+            });
+        });
+        
+        loadExampleBtn.addEventListener('click', () => {
+            inputCode.value = exampleCode;
+            updateStats();
+            
+            const originalText = loadExampleBtn.innerHTML;
+            loadExampleBtn.innerHTML = '<i class="fas fa-check"></i> Loaded!';
+            
+            setTimeout(() => {
+                loadExampleBtn.innerHTML = originalText;
+            }, 1200);
+        });
+        
+        inputCode.addEventListener('input', updateStats);
+        
+        outputCode.addEventListener('click', function(e) {
+            if (this.textContent.includes('...') && isTruncated) {
+                isTruncated = false;
+                const fullText = this.getAttribute('data-full') || this.textContent.replace(/\n\.\.\.$/, '');
+                this.textContent = fullText;
+            }
+        });
+        
+        function showCopyStatus(message, success) {
+            copyStatus.innerHTML = `<div class="${success ? 'copy-success' : 'copy-btn'}" style="background: ${success ? '#059669' : '#dc2626'}">${message}</div>`;
+            
+            if (success) {
+                setTimeout(() => {
+                    copyStatus.innerHTML = '';
+                }, 1500);
+            } else {
+                setTimeout(() => {
+                    copyStatus.innerHTML = '';
+                }, 2000);
+            }
+        }
+        
+        inputCode.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                formatBtn.click();
+            }
+        });
+        
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                formatBtn.click();
+            }, 300);
+        });
+    </script>
+</body>
+</html>
