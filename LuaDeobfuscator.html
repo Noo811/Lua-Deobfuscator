@@ -381,11 +381,12 @@
         const exampleCode = `if getgenv().Supassra_sp then return;end getgenv().Supassra_sp=true;local v1=game:GetService("Players");local v2=game:GetService("UserInputService");local v3=game:GetService("RunService");local v4=game:GetService("TweenService");local v5=game:GetService("HttpService");local v6=game:GetService("MarketplaceService");local v7=game:GetService("TeleportService");local v8=game:GetService("Workspace");local v9=v1.LocalPlayer;local v10=Instance.new("ScreenGui");v10.Name="SUPASSRA_SP_GUI";v10.Parent=v9:WaitForChild("PlayerGui");v10.ResetOnSpawn=false;local function v14(v233,v234) local v235=0;local v236;while true do if (v235==1) then v236.AnchorPoint=Vector2.new(0.5,0);v236.BackgroundColor3=v234;v236.BackgroundTransparency=0.4;v236.TextColor3=Color3.new(1,1,1);v235=2;end if (v235==3) then v236.Parent=v10;Instance.new("UICorner",v236).CornerRadius=UDim.new(0,12);task.spawn(function() local v456=0;while true do if (v456==0) then task.wait(3);v236:Destroy();break;end end end);break;end if (v235==0) then v234=v234 or Color3.fromRGB(100,200,255);v236=Instance.new("TextLabel");v236.Size=UDim2.fromOffset(240,48);v236.Position=UDim2.new(0.5,0,0,60);v235=1;end if (v235==2) then v236.Font=Enum.Font.GothamBold;v236.TextSize=15;v236.Text=v233;v236.ZIndex=10000;v235=3;end end end v14("SUPASSRA_SP PREMIUM LOADED!",Color3.fromRGB(140,100,255));`;
         
         let isTruncated = true;
+        let fullDeobfuscatedCode = "";
         
         window.addEventListener('DOMContentLoaded', () => {
             inputCode.value = exampleCode;
             updateStats();
-            applyTruncation();
+            formatCode();
         });
         
         function updateStats() {
@@ -398,13 +399,16 @@
         }
         
         function applyTruncation() {
-            if (isTruncated && outputCode.textContent) {
-                const text = outputCode.textContent;
-                const lines = text.split('\n');
+            if (isTruncated && fullDeobfuscatedCode) {
+                const lines = fullDeobfuscatedCode.split('\n');
                 if (lines.length > 6) {
                     const truncated = lines.slice(0, 6).join('\n') + '\n...';
                     outputCode.textContent = truncated;
+                } else {
+                    outputCode.textContent = fullDeobfuscatedCode;
                 }
+            } else {
+                outputCode.textContent = fullDeobfuscatedCode;
             }
         }
         
@@ -464,16 +468,15 @@
             return formatted;
         }
         
-        formatBtn.addEventListener('click', () => {
+        function formatCode() {
             const input = inputCode.value;
             if (!input.trim()) {
                 outputCode.textContent = "Enter code to deobfuscate.";
+                fullDeobfuscatedCode = "";
                 return;
             }
             
-            const formatted = formatLuaCode(input);
-            outputCode.textContent = formatted;
-            
+            fullDeobfuscatedCode = formatLuaCode(input);
             applyTruncation();
             
             const originalText = formatBtn.innerHTML;
@@ -484,11 +487,14 @@
                 formatBtn.innerHTML = originalText;
                 formatBtn.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
             }, 1500);
-        });
+        }
+        
+        formatBtn.addEventListener('click', formatCode);
         
         clearBtn.addEventListener('click', () => {
             inputCode.value = '';
             outputCode.textContent = '';
+            fullDeobfuscatedCode = "";
             updateStats();
             
             const originalText = clearBtn.innerHTML;
@@ -500,22 +506,22 @@
         });
         
         copyBtn.addEventListener('click', () => {
-            const fullText = outputCode.getAttribute('data-full') || outputCode.textContent;
-            if (!fullText.trim()) {
+            if (!fullDeobfuscatedCode.trim()) {
                 showCopyStatus('No code!', false);
                 return;
             }
             
-            navigator.clipboard.writeText(fullText).then(() => {
-                showCopyStatus('Copied!', true);
+            navigator.clipboard.writeText(fullDeobfuscatedCode).then(() => {
+                showCopyStatus('Full code copied!', true);
             }).catch(err => {
-                showCopyStatus('Failed!', false);
+                showCopyStatus('Copy failed!', false);
             });
         });
         
         loadExampleBtn.addEventListener('click', () => {
             inputCode.value = exampleCode;
             updateStats();
+            formatCode();
             
             const originalText = loadExampleBtn.innerHTML;
             loadExampleBtn.innerHTML = '<i class="fas fa-check"></i> Loaded!';
@@ -530,8 +536,7 @@
         outputCode.addEventListener('click', function(e) {
             if (this.textContent.includes('...') && isTruncated) {
                 isTruncated = false;
-                const fullText = this.getAttribute('data-full') || this.textContent.replace(/\n\.\.\.$/, '');
-                this.textContent = fullText;
+                applyTruncation();
             }
         });
         
@@ -551,13 +556,13 @@
         
         inputCode.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 'Enter') {
-                formatBtn.click();
+                formatCode();
             }
         });
         
         window.addEventListener('load', () => {
             setTimeout(() => {
-                formatBtn.click();
+                formatCode();
             }, 300);
         });
     </script>
